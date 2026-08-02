@@ -39,7 +39,11 @@ models:
       +materialized: view
     staging:
       +materialized: view
+      profitability:
+        +tags: "profitability"
     intermediate:
       +materialized: ephemeral
     marts:
       +materialized: table
+      profitability:
+        +tags: "profitability"

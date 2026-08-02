@@ -1,0 +1,92 @@
+version: 2
+
+sources:
+  - name: raw_profitability
+    schema: raw
+    description: >
+      Raw source tables for the Project Profitability star schema.
+      These tables are already loaded into the raw schema.
+    tables:
+      - name: src_projects
+        description: Project master data
+        columns:
+          - name: project_id
+            description: Primary key
+          - name: project_code
+            description: Human-readable project code
+          - name: project_name
+            description: Name of the project
+          - name: client_id
+            description: FK to client
+          - name: project_manager_id
+            description: FK to src_employees (PM)
+          - name: office_id
+            description: FK to office
+          - name: start_date
+            description: Project start date
+          - name: planned_end_date
+            description: Originally planned end date
+          - name: actual_end_date
+            description: Actual end date (nullable if still open)
+          - name: budget_usd
+            description: Total project budget in USD
+          - name: status
+            description: "Active | OnHold | Closed | Cancelled"
+          - name: updated_at
+            description: Last update timestamp
+
+      - name: src_employees
+        description: >
+          Employee master data with change history.
+          One row per version (SCD Type 2 source).
+        columns:
+          - name: employee_version_id
+            description: Primary key (surrogate for each version)
+          - name: employee_id
+            description: Stable business key for the employee
+          - name: employee_code
+            description: HR employee code
+          - name: full_name
+            description: Full name
+          - name: email
+            description: Email address
+          - name: department
+            description: Department (can change over time)
+          - name: role
+            description: Job role (can change over time)
+          - name: team_code
+            description: Team identifier (can change over time)
+          - name: hire_date
+            description: Date of hire
+          - name: termination_date
+            description: Termination date (nullable if active)
+          - name: valid_from
+            description: Start of this version's validity
+          - name: valid_to
+            description: End of this version's validity (NULL = current)
+          - name: is_current
+            description: Whether this is the currently valid version
+
+      - name: src_timesheet_entries
+        description: Individual timesheet line items
+        columns:
+          - name: entry_id
+            description: Primary key
+          - name: project_id
+            description: FK to src_projects
+          - name: employee_id
+            description: FK to src_employees (business key)
+          - name: entry_date
+            description: Date of work
+          - name: hours
+            description: Number of hours logged
+          - name: is_billable
+            description: Whether the hours are billable
+          - name: hourly_rate_usd
+            description: Billing rate per hour in USD
+          - name: is_approved
+            description: Whether the entry has been approved
+          - name: approved_at
+            description: Timestamp of approval
+          - name: created_at
+            description: Row creation timestamp

@@ -1,0 +1,117 @@
+version: 2
+
+models:
+  - name: dim_project
+    description: >
+      Type 1 project dimension. One row per project.
+    columns:
+      - name: project_key
+        description: Primary key (= project_id)
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_employee
+    description: >
+      SCD Type 2 employee dimension. One row per employee version.
+      Preserves historical role, department, and team_code so the
+      fact table can capture attributes at the time of work.
+    columns:
+      - name: employee_key
+        description: Surrogate primary key (= employee_version_id)
+        tests:
+          - unique
+          - not_null
+      - name: employee_id
+        description: Stable business key
+        tests:
+          - not_null
+      - name: valid_from
+        description: Start of this version's validity
+        tests:
+          - not_null
+
+  - name: dim_client
+    description: >
+      Client dimension derived from projects. Stub dimension —
+      extend with a dedicated clients source when available.
+    columns:
+      - name: client_key
+        description: Primary key (= client_id)
+        tests:
+          - unique
+          - not_null
+      - name: client_name
+        description: Name of the client (nullable for future source expansion)
+
+  - name: dim_office
+    description: >
+      Office dimension derived from projects. Stub dimension —
+      extend with a dedicated offices source when available.
+    columns:
+      - name: office_key
+        description: Primary key (= office_id)
+        tests:
+          - unique
+          - not_null
+      - name: office_name
+        description: Name of the office (nullable for future source expansion)
+
+  - name: dim_date
+    description: >
+      Monthly date dimension. Generated date spine covering 2020–2030.
+    columns:
+      - name: date_key
+        description: Primary key (first day of month)
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_timesheet_monthly
+    description: >
+      Monthly project profitability fact table.
+      Grain: one row per project × employee version × month.
+      Employee role/team is captured at the time of work via SCD2 join.
+    columns:
+      - name: project_key
+        description: FK to dim_project
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_key
+      - name: employee_key
+        description: FK to dim_employee (SCD2 version)
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employee')
+                field: employee_key
+      - name: report_month
+        description: First day of the reporting month
+        tests:
+          - not_null
+      - name: client_key
+        description: FK to dim_client (denormalized from project)
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_client')
+                field: client_key
+      - name: office_key
+        description: FK to dim_office (denormalized from project)
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_office')
+                field: office_key
+      - name: billable_hours
+        description: Total billable hours for the month
+      - name: non_billable_hours
+        description: Total non-billable hours for the month
+      - name: total_hours
+        description: Total hours (billable + non-billable)
+      - name: revenue_usd
+        description: Revenue from billable hours only

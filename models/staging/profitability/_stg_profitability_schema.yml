@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: stg_src_projects
+    description: Staged project data from raw.src_projects
+    columns:
+      - name: project_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_src_employees
+    description: >
+      Staged employee versions from raw.src_employees.
+      One row per version (SCD Type 2 source).
+    columns:
+      - name: employee_version_id
+        description: Primary key (version-level surrogate)
+        tests:
+          - unique
+          - not_null
+      - name: employee_id
+        description: Stable business key
+        tests:
+          - not_null
+
+  - name: stg_src_timesheet_entries
+    description: >
+      Staged approved timesheet entries from raw.src_timesheet_entries.
+      Unapproved entries are excluded at staging.
+    columns:
+      - name: entry_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: project_id
+        tests:
+          - not_null
+      - name: employee_id
+        tests:
+          - not_null
+      - name: entry_date
+        tests:
+          - not_null

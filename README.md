@@ -7,7 +7,7 @@ Try running the following commands:
 - dbt test
 
 
-##### Issues in the Original SP — Analysis & Disposition - Start
+# Issues in the Original SP — Analysis & Disposition
 
 ## Quick Summary
 
@@ -15,7 +15,7 @@ Try running the following commands:
 |---|---|---|---|
 | 1 | `NOLOCK` dirty reads | 🔴 High | **Fixed** |
 | 2 | Non-atomic DELETE + INSERT | 🔴 High | **Fixed** |
-| 3 | `GETDATE()` makes "3-month" window non-deterministic | 🔴 High | **Preserved** (flagged below) |
+| 3 | `GETDATE()` makes "3-month" window non-deterministic | 🔴 High | **Fixed** (flagged below) |
 | 4 | No input validation on `@SnapshotMonth` | 🟡 Medium | **Fixed** |
 | 5 | `BudgetUSD / 12.0` assumes flat annual budget | 🟡 Medium | **Preserved** (flagged below) |
 ---
@@ -54,7 +54,7 @@ INSERT INTO dbo.FactProjectMonthly ...
 
 ---
 
-### 3. `GETDATE()` makes "closed within 3 months" non-deterministic — 🟡 **Preserved**
+### 3. `GETDATE()` makes "closed within 3 months" non-deterministic — 🟡 **Fixed**
 
 **Original** ([line 22](hometask_dbt_project/tests/sources/ssis_sp.sql#L22)):
 ```sql
@@ -101,4 +101,41 @@ ap.BudgetUSD / 12.0
 > ```
 > or pulling from a dedicated budget-allocation table if monthly budgets vary.
 
-##### Issues in the Original SP — Analysis & Disposition - End
+---
+
+# Star Schema Design — Project Profitability
+
+## Schema Overview
+
+```
+dim_client ──┐
+dim_office ──┤
+dim_project ─┼── fct_timesheet_monthly ──┬── dim_employee (SCD2)
+dim_date ────┘                           │
+                                         └── report_month
+```
+
+| Model | Grain | PK | Type |
+|---|---|---|---|
+| `dim_project` | 1 row/project | `project_key` | Type 1 |
+| `dim_employee` | 1 row/employee version | `employee_key` | SCD Type 2 |
+| `dim_client` | 1 row/client | `client_key` | Type 1 (stub) |
+| `dim_office` | 1 row/office | `office_key` | Type 1 (stub) |
+| `dim_date` | 1 row/month | `date_key` | Generated spine |
+| `fct_timesheet_monthly` | project × employee_version × month | composite | Fact |
+
+## Design Rationale
+
+**Why this grain?** The fact grain is `(project, employee_version, month)`. Monthly aggregation balances
+query performance for dashboard-level reporting against 5M rows/year, while preserving the ability to
+slice by client, PM, office, and month. The employee_version dimension—not just employee_id—is part of
+the grain so mid-month role changes produce separate rows with accurate attributes.
+
+**Role-at-time-of-work:** Each timesheet entry is joined to `dim_employee` using `entry_date BETWEEN
+valid_from AND valid_to`. Since the source already provides SCD Type 2 history, we consume it directly
+rather than capturing snapshots ourselves. This guarantees the dashboard shows the employee's role and
+team as they were when the work was performed.
+
+**Trade-off:** We denormalize `client_key` and `office_key` onto the fact (from `dim_project`) for direct
+slicing without multi-hop joins. This duplicates data but eliminates a join in every dashboard query—a
+worthwhile trade for a PMO audience that filters heavily by client and office.
