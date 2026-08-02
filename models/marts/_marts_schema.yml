@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: fct_project_monthly
+    description: >
+      Monthly project fact table. Each row represents the hours and revenue
+      for one employee on one project in a given snapshot month.
+      Replaces the output of sp_LoadFactProjectMonthly.
+    columns:
+      - name: snapshot_month
+        description: "Snapshot month in YYYYMM format (e.g. 202410)"
+        tests:
+          - not_null
+      - name: project_id
+        description: FK to the project
+        tests:
+          - not_null
+      - name: employee_id
+        description: FK to the employee
+        tests:
+          - not_null
+      - name: client_id
+        description: FK to the client
+      - name: office_id
+        description: FK to the office
+      - name: department
+        description: Employee department at time of snapshot
+      - name: role
+        description: Employee role at time of snapshot
+      - name: billable_hours
+        description: Total billable hours for the month
+      - name: non_billable_hours
+        description: Total non-billable hours for the month
+      - name: revenue_usd
+        description: "Total revenue: hours × hourly rate"
+      - name: monthly_budget_usd
+        description: "Prorated monthly budget: annual budget / 12"

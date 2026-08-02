@@ -1,0 +1,62 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: public
+    description: Raw source tables from the operational database
+    tables:
+      - name: projects
+        description: Project master data (originally dbo.Projects)
+        columns:
+          - name: projectid
+            description: Primary key of the project
+          - name: projectcode
+            description: Human-readable project code
+          - name: projectname
+            description: Name of the project
+          - name: clientid
+            description: FK to the client
+          - name: pmuserid
+            description: Project manager user ID
+          - name: officeid
+            description: FK to the office
+          - name: budgetusd
+            description: Total project budget in USD
+          - name: status
+            description: "Project status: Active, OnHold, Closed"
+          - name: closeddate
+            description: Date the project was closed (nullable)
+
+      - name: timesheet_entries
+        description: Individual timesheet line items (originally dbo.TimesheetEntries)
+        columns:
+          - name: projectid
+            description: FK to the project
+          - name: employeeid
+            description: FK to the employee
+          - name: entrydate
+            description: Date of the timesheet entry
+          - name: hours
+            description: Number of hours logged
+          - name: hourlyrate
+            description: Billing rate per hour in USD
+          - name: isbillable
+            description: Whether the hours are billable (1) or not (0)
+          - name: isapproved
+            description: Whether the entry has been approved (1) or not (0)
+
+      - name: employees
+        description: Employee master data (originally dbo.Employees)
+        columns:
+          - name: employeeid
+            description: Primary key of the employee
+          - name: employeename
+            description: Full name of the employee
+          - name: department
+            description: Department the employee belongs to
+          - name: role
+            description: Job role / title
+          - name: teamcode
+            description: Team identifier
+          - name: isactive
+            description: Whether the employee is currently active (1) or not (0)

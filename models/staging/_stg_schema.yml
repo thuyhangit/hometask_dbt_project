@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_projects
+    description: >
+      Staged projects table. Renames columns to snake_case and
+      coalesces budget_usd to 0 for null values.
+    columns:
+      - name: project_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_timesheet_entries
+    description: >
+      Staged timesheet entries. Renames columns to snake_case.
+    columns:
+      - name: project_id
+        description: FK to projects
+        tests:
+          - not_null
+      - name: employee_id
+        description: FK to employees
+        tests:
+          - not_null
+
+  - name: stg_employees
+    description: >
+      Staged employees table. Renames columns to snake_case.
+    columns:
+      - name: employee_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
